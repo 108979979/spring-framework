@@ -192,8 +192,10 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 
+	//内置的 ResourceLoader 资源加载器
 	private final ResourceLoader resourceLoader;
 
+	//Ant 路径匹配器
 	private PathMatcher pathMatcher = new AntPathMatcher();
 
 
@@ -264,13 +266,21 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		return getResourceLoader().getResource(location);
 	}
 
+	/**
+	 * 
+	 * 将资locationPattern的头部信息不是"classpath*:"、且路径中不包含通配符的委托给this.resourceLoader处理，
+	 * 其他情况，调用 findAllClassPathResources或 findPathMatchingResources方法，返回Resource数组
+	 * @param locationPattern ：资源路径
+	 * @return
+	 * @throws IOException
+	 */
 	@Override
 	public Resource[] getResources(String locationPattern) throws IOException {
 		Assert.notNull(locationPattern, "Location pattern must not be null");
 		if (locationPattern.startsWith(CLASSPATH_ALL_URL_PREFIX)) {
-			// a class path resource (multiple resources for same name possible)
+			// 头部信息为 "classpath*:" 
 			if (getPathMatcher().isPattern(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()))) {
-				// a class path resource pattern
+				// 路径包含通配符
 				return findPathMatchingResources(locationPattern);
 			}
 			else {
@@ -279,15 +289,14 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 			}
 		}
 		else {
-			// Only look for a pattern after a prefix here
-			// (to not get fooled by a pattern symbol in a strange prefix).
+			// 头部信息不是为 "classpath*:" 
 			int prefixEnd = locationPattern.indexOf(":") + 1;
 			if (getPathMatcher().isPattern(locationPattern.substring(prefixEnd))) {
-				// a file pattern
+				//路径信息包含通配符
 				return findPathMatchingResources(locationPattern);
 			}
 			else {
-				// a single resource with the given name
+				//路径不包含通配符的委托给内置的 ResourceLoader处理
 				return new Resource[] {getResourceLoader().getResource(locationPattern)};
 			}
 		}
@@ -399,19 +408,19 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	/**
-	 * Find all resources that match the given location pattern via the
-	 * Ant-style PathMatcher. Supports resources in jar files and zip files
-	 * and in the file system.
-	 * @param locationPattern the location pattern to match
-	 * @return the result as Resource array
-	 * @throws IOException in case of I/O errors
-	 * @see #doFindPathMatchingJarResources
-	 * @see #doFindPathMatchingFileResources
-	 * @see org.springframework.util.PathMatcher
+	 * 通过locationPattern，解析出所有符合规则的资源，并以数组的形式返回
+	 * @param locationPattern ：资源路径
+	 * @return
+	 * @throws IOException
 	 */
 	protected Resource[] findPathMatchingResources(String locationPattern) throws IOException {
+		//将路径分为两部分处理，一部分是不包含个通配符，另一部分是包含通配符的
+		
+		//获取路径中不含通配符的部分
 		String rootDirPath = determineRootDir(locationPattern);
+		//获取路径中含有通配符的部分
 		String subPattern = locationPattern.substring(rootDirPath.length());
+		
 		Resource[] rootDirResources = getResources(rootDirPath);
 		Set<Resource> result = new LinkedHashSet<Resource>(16);
 		for (Resource rootDirResource : rootDirResources) {
@@ -420,9 +429,11 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 				result.addAll(VfsResourceMatchingDelegate.findMatchingResources(rootDirResource, subPattern, getPathMatcher()));
 			}
 			else if (isJarResource(rootDirResource)) {
+				//处理jar资源
 				result.addAll(doFindPathMatchingJarResources(rootDirResource, subPattern));
 			}
 			else {
+				//处理文件资源
 				result.addAll(doFindPathMatchingFileResources(rootDirResource, subPattern));
 			}
 		}
@@ -432,17 +443,12 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		return result.toArray(new Resource[result.size()]);
 	}
 
+	
 	/**
-	 * Determine the root directory for the given location.
-	 * <p>Used for determining the starting point for file matching,
-	 * resolving the root directory location to a {@code java.io.File}
-	 * and passing it into {@code retrieveMatchingFiles}, with the
-	 * remainder of the location as pattern.
-	 * <p>Will return "/WEB-INF/" for the pattern "/WEB-INF/*.xml",
-	 * for example.
-	 * @param location the location to check
-	 * @return the part of the location that denotes the root directory
-	 * @see #retrieveMatchingFiles
+	 * 将location中路径部分的包含通配符的内容删掉，并返回
+	 * 用于获取根路径
+	 * @param location ：资源路径
+	 * @return
 	 */
 	protected String determineRootDir(String location) {
 		int prefixEnd = location.indexOf(":") + 1;
@@ -596,20 +602,18 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	/**
-	 * Find all resources in the file system that match the given location pattern
-	 * via the Ant-style PathMatcher.
-	 * @param rootDirResource the root directory as Resource
-	 * @param subPattern the sub pattern to match (below the root directory)
-	 * @return a mutable Set of matching Resource instances
-	 * @throws IOException in case of I/O errors
-	 * @see #retrieveMatchingFiles
-	 * @see org.springframework.util.PathMatcher
+	 * 返回rootDirResource下经过通配符匹配过的所有文件
+	 * @param rootDirResource ：资源的root路径
+	 * @param subPattern ： 通配符
+	 * @return
+	 * @throws IOException
 	 */
 	protected Set<Resource> doFindPathMatchingFileResources(Resource rootDirResource, String subPattern)
 			throws IOException {
 
 		File rootDir;
 		try {
+			//获取绝对路径的文件
 			rootDir = rootDirResource.getFile().getAbsoluteFile();
 		}
 		catch (IOException ex) {
@@ -623,22 +627,21 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	}
 
 	/**
-	 * Find all resources in the file system that match the given location pattern
-	 * via the Ant-style PathMatcher.
-	 * @param rootDir the root directory in the file system
-	 * @param subPattern the sub pattern to match (below the root directory)
-	 * @return a mutable Set of matching Resource instances
-	 * @throws IOException in case of I/O errors
-	 * @see #retrieveMatchingFiles
-	 * @see org.springframework.util.PathMatcher
+	 * 获取root路径下 所有满足通配符规则的文件，并将这些文件构建成FileSystemResource类型的资源，以Set的结构返回
+	 * @param rootDir ：root路径
+	 * @param subPattern ：通配符
+	 * @return
+	 * @throws IOException
 	 */
 	protected Set<Resource> doFindMatchingFileSystemResources(File rootDir, String subPattern) throws IOException {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Looking for matching resources in directory tree [" + rootDir.getPath() + "]");
 		}
+		//根据通配符匹配rootDir目录下的所有文件
 		Set<File> matchingFiles = retrieveMatchingFiles(rootDir, subPattern);
 		Set<Resource> result = new LinkedHashSet<Resource>(matchingFiles.size());
 		for (File file : matchingFiles) {
+			//将所有文件构建成FileSystemResource类型的资源
 			result.add(new FileSystemResource(file));
 		}
 		return result;

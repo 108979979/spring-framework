@@ -17,6 +17,8 @@
 package test.resource.loader;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.Enumeration;
 
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -26,6 +28,8 @@ import org.springframework.core.io.FileSystemResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 
 /**
  * 
@@ -34,6 +38,9 @@ import org.springframework.core.io.UrlResource;
  */
 public class ResourceLoaderTest {
 
+	/**
+	 * DefaultResourceLoader
+	 */
 	@Test
 	public void testDefaultResourceLoader() throws IOException {
 		ResourceLoader resourceLoader = new DefaultResourceLoader();
@@ -73,5 +80,23 @@ public class ResourceLoaderTest {
 		Resource urlResource2 = resourceLoader.getResource("http://www.baidu.com");
 		System.out.println("urlResource1 is urlResource:" + (urlResource2 instanceof UrlResource));
 	}
+	
+	/**
+	 * 通配符
+	 */
+	@Test
+	public void testPathMatchingResourcePatternResolver() throws IOException {
+		System.out.println("======testPathMatchingResourcePatternResolver======");
+		ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+		
+		Resource[] resources = resolver.getResources("classpath*:test/resource/loader");
+		
+		System.out.println(resources.length);
+	}
+	
+	
+	
+	
+	
 
 }
