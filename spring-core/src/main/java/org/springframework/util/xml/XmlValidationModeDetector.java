@@ -90,17 +90,22 @@ public class XmlValidationModeDetector {
 		// Peek into the file to look for DOCTYPE.
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
 		try {
+			// 是否为 DTD 校验模式。默认为，非 DTD 模式，即 XSD 模式
 			boolean isDtdValidated = false;
 			String content;
+			//循环，逐行读取 XML 文件的内容
 			while ((content = reader.readLine()) != null) {
 				content = consumeCommentTokens(content);
+				//跳过注释行 或 空白行
 				if (this.inComment || !StringUtils.hasText(content)) {
 					continue;
 				}
+				//包含 DOCTYPE 为 DTD 模式
 				if (hasDoctype(content)) {
 					isDtdValidated = true;
 					break;
 				}
+				//判断如果这一行包含 < ，并且 < 紧跟着的是字幕，则为 XSD 验证模式
 				if (hasOpeningTag(content)) {
 					// End of meaningful data...
 					break;
@@ -127,9 +132,7 @@ public class XmlValidationModeDetector {
 	}
 
 	/**
-	 * Does the supplied content contain an XML opening tag. If the parse state is currently
-	 * in an XML comment then this method always returns false. It is expected that all comment
-	 * tokens will have consumed for the supplied content before passing the remainder to this method.
+	 * 判断如果这一行包含 < ，并且 < 紧跟着的是字幕，返回true
 	 */
 	private boolean hasOpeningTag(String content) {
 		if (this.inComment) {

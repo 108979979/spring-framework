@@ -17,8 +17,6 @@
 package test.resource.loader;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.Enumeration;
 
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -47,7 +45,8 @@ public class ResourceLoaderTest {
 
 		Resource fileResource1 = resourceLoader.getResource("D:/Users/chenming673/Documents/spark.txt");
 		System.out.println("fileResource1 is FileSystemResource:"+ (fileResource1 instanceof FileSystemResource));
-		System.out.println("fileResource1 is FileSystemResource:"+ (fileResource1 instanceof ClassPathResource));
+		System.out.println("fileResource1 is ClassPathResource:"+ (fileResource1 instanceof ClassPathResource));
+		System.out.println("fileResource1:" + fileResource1.getClass());
 
 		Resource fileResource2 = resourceLoader.getResource("/Users/chenming673/Documents/spark.txt");
 		System.out.println("fileResource2 is ClassPathResource:"+ (fileResource2 instanceof ClassPathResource));
@@ -59,7 +58,7 @@ public class ResourceLoaderTest {
 		System.out.println("urlResource1 is urlResource:" + (urlResource2 instanceof UrlResource));
 		
 		Resource urlResource3 = resourceLoader.getResource("WEB-INF/test.dat");
-		System.out.println("urlResource3 is ClassPathContextResource:" + (urlResource3 instanceof ClassPathResource));
+		System.out.println("urlResource3 is ClassPathResource:" + (urlResource3 instanceof ClassPathResource));
 	}
 	
 	@Test
