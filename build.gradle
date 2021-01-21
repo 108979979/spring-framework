@@ -1,5 +1,9 @@
 buildscript {
 	repositories {
+		//Maven本地资源库
+		mavenLocal()
+		//阿里云仓库
+		maven {url "http://maven.aliyun.com/nexus/content/groups/public/" }
 		maven { url "https://repo.spring.io/plugins-release" }
 	}
 	dependencies {
@@ -125,6 +129,7 @@ configure(allprojects) { project ->
 
 	repositories {
 		maven { url "https://repo.spring.io/libs-release" }
+		
 	}
 
 	dependencies {
